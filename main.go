@@ -13,8 +13,21 @@ func main() {
 	// Intialize Fiber
 	app := fiber.New()
 
+	// Initialize database
+	db, err := config.Connect()
+
+	if err != nil {
+		panic("Could not connect to the database")
+	}
+
+	// Migrate database
+	db.AutoMigrate(&model.Movie{})
+
+	// Initialize Model
+	movie_model := model.NewMovieModel(db)
+
 	// Initialize controller
-	movie_controller := new(controller.MovieController)
+	movie_controller := controller.NewMovieController(*movie_model)
 	user_controller := new(controller.UserController)
 
 	// Routes User API
