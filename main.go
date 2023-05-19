@@ -21,7 +21,9 @@ func main() {
 	}
 
 	// Migrate database
-	db.AutoMigrate(&model.Movie{})
+	if err := db.AutoMigrate(&model.Movie{}); err != nil {
+		panic(err)
+	}
 
 	// Initialize Model
 	movie_model := model.NewMovieModel(db)
@@ -46,5 +48,7 @@ func main() {
 	movie.Delete("/:id", movie_controller.Delete)
 
 	// Start server
-	app.Listen(":3000")
+	if err = app.Listen(":3000"); err != nil {
+		panic(err)
+	}
 }
