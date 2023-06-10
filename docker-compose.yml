@@ -1,0 +1,38 @@
+version: "3"
+services:
+  api:
+    container_name: movie-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+    networks:
+      - mynetwork
+    environment:
+      DB_HOST: postgres-db
+      DB_PORT: 5432
+      DB_USER: admin
+      DB_PASSWORD: 123456
+      DB_NAME: movie_db
+
+  db:
+    container_name: postgres-db
+    image: postgres:12
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: movie_db
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+
+
+volumes:
+  dbdata:
