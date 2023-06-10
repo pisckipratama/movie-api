@@ -21,3 +21,27 @@ jobs:
         run: |
           docker tag movie-api ${{secrets.DOCKER_USER}}/movie-api:0.1.${GITHUB_RUN_NUMBER}
           docker push ${{secrets.DOCKER_USER}}/movie-api:0.1.${GITHUB_RUN_NUMBER}
+
+  deploy:
+    name: deploy to server
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+      - name: install ssh keys
+        # check this thread to understand why its needed:
+        # https://stackoverflow.com/a/70447517
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+      - name: replace and send docker-compose.prod.yml file
+        run: |
+          sed -i "s|<imageName>|${{secrets.DOCKER_USER}}/movie-api:0.1.${GITHUB_RUN_NUMBER}|g" docker-compose.prod.yml
+          scp docker-compose.prod.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR }}
+      - name: connect and running
+        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && docker login -u $DOCKER_USER -p $DOCKER_PASSWORD && docker compose -f docker-compose.prod.yml up -d"
+      - name: cleanup
+        run: rm -rf ~/.ssh
