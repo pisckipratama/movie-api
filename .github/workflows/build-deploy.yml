@@ -1,0 +1,23 @@
+name: Movie App CI/CD
+
+on:
+  push:
+    branches: ['master']
+env:
+  DOCKER_USER: ${{secrets.DOCKER_USER}}
+  DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Login to Docker Hub
+        run: |
+          docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+      - name: Build the Docker image
+        run: docker build -t movie-api .
+      - name: Docker Push
+        run: |
+          docker tag movie-api ${{secrets.DOCKER_USER}}/movie-api:0.1.${GITHUB_RUN_NUMBER}
+          docker push ${{secrets.DOCKER_USER}}/movie-api:0.1.${GITHUB_RUN_NUMBER}
