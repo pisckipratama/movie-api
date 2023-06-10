@@ -3,8 +3,6 @@ name: Movie App CI/CD
 on:
   push:
     branches: ['main']
-  pull_request:
-    branches: ['main']
 
 jobs:
   build:
@@ -24,3 +22,20 @@ jobs:
         run: |
           docker tag movie-api ${{secrets.DOCKER_USER}}/movie-api:1.0.${GITHUB_RUN_NUMBER}
           docker push ${{secrets.DOCKER_USER}}/movie-api:1.0.${GITHUB_RUN_NUMBER}
+
+  deploy:
+    name: deploy to server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: install ssh keys
+        # check this thread to understand why its needed:
+        # https://stackoverflow.com/a/70447517
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+      - name: connect and pull
+        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && cat docker-compose.yml"
+      - name: cleanup
+        run: rm -rf ~/.ssh
